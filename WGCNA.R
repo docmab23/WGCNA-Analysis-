@@ -7,10 +7,9 @@ library(gridExtra)
 
 allowWGCNAThreads()      
 
-# 1. Fetch Data ------------------------------------------------
-data <- read.delim('~/Desktop/demo/WGCNA/GSE152418_p20047_Study1_RawCounts.txt', header = T)
 
-# get metadata
+data <- read.delim('./GSE152418_p20047_Study1_RawCounts.txt', header = T)
+
 geo_id <- "GSE152418"
 gse <- getGEO(geo_id, GSEMatrix = TRUE)
 phenoData <- pData(phenoData(gse[[1]]))
@@ -45,7 +44,7 @@ htree <- hclust(dist(t(data)), method = "average")
 plot(htree)
 
 
-# pca - method 2
+
 
 pca <- prcomp(t(data))
 pca.dat <- pca$x
@@ -62,10 +61,6 @@ ggplot(pca.dat, aes(PC1, PC2)) +
        y = paste0('PC2: ', pca.var.percent[2], ' %'))
 
 
-### NOTE: If there are batch effects observed, correct for them before moving ahead
-
-
-# exclude outlier samples
 samples.to.be.excluded <- c('GSM4615000', 'GSM4614993', 'GSM4614995')
 data.subset <- data[,!(colnames(data) %in% samples.to.be.excluded)]
 
@@ -74,7 +69,6 @@ colData <- phenoData %>%
   filter(!row.names(.) %in% samples.to.be.excluded)
 
 
-# fixing column names in colData
 names(colData)
 names(colData) <- gsub(':ch1', '', names(colData))
 names(colData) <- gsub('\\s', '_', names(colData))
@@ -106,8 +100,6 @@ norm.counts <- assay(dds_norm) %>%
   t()
 
 
-# 4. Network Construction  ---------------------------------------------------
-# Choose a set of soft-thresholding powers
 power <- c(c(1:10), seq(from = 12, to = 50, by = 2))
 
 # Call the network topology analysis function
@@ -138,7 +130,6 @@ a2 <- ggplot(sft.data, aes(Power, mean.k., label = Power)) +
 grid.arrange(a1, a2, nrow = 2)
 
 
-# convert matrix to numeric
 norm.counts[] <- sapply(norm.counts, as.numeric)
 
 soft_power <- 18
@@ -182,14 +173,6 @@ plotDendroAndColors(bwnet$dendrograms[[1]], cbind(bwnet$unmergedColors, bwnet$co
 
 
 
-# grey module = all genes that doesn't fall into other modules were assigned to the grey module
-
-
-
-
-
-# 6A. Relate modules to traits --------------------------------------------------
-# module trait associations
 
 
 
@@ -248,14 +231,6 @@ module.gene.mapping %>%
 
 
 
-# 6B. Intramodular analysis: Identifying driver genes ---------------
-
-
-
-# Calculate the module membership and the associated p-values
-
-# The module membership/intramodular connectivity is calculated as the correlation of the eigengene and the gene expression profile. 
-# This quantifies the similarity of all genes on the array to every module.
 
 module.membership.measure <- cor(module_eigengenes, norm.counts, use = 'p')
 module.membership.measure.pvals <- corPvalueStudent(module.membership.measure, nSamples)
